@@ -1,5 +1,5 @@
-streamlit
-torch
-transformers
-huggingface-hub
-torchcrf
+streamlit==1.48.1
+torch==2.8.0
+transformers==4.55.2
+huggingface-hub==0.34.4
+torchcrf==1.1.0
