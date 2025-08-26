@@ -11,6 +11,7 @@ from torchcrf import CRF
 import time
 from myword_hf import tokenize_burmese_text
 from huggingface_hub import hf_hub_download
+import gc
 
 # -----------------------
 # 1️⃣ Define DistilBERT + CRF model
@@ -60,61 +61,63 @@ checkpoint_path = hf_hub_download(repo_id="nuwaithetsophia/myword_tokenizer", fi
 # Load tokenizer
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 id2label = {0: 'B-DATE', 1: 'B-LOC', 2: 'B-TIME', 3: 'I-DATE', 4: 'I-LOC', 5: 'I-TIME', 6: 'O'}
-num_labels = len(id2label)   # <-- make sure you define id2label = {0:"O", 1:"B-LOC", ...}
-model = DistilBertCRF(MODEL_NAME, num_labels).to(device)
+num_labels = len(id2label)  
 
-# Load to CPU first, then move model to device
-state_dict = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
-model.load_state_dict(state_dict)
-#model = model.to(device)   # reassign here
-model.eval()
+@st.cache_resource
+def load_model_and_tokenizer():
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    model = DistilBertCRF(MODEL_NAME, num_labels).to(device)
+    state_dict = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+    model.load_state_dict(state_dict)
+    model.eval()
+    return model, tokenizer
+
+model, tokenizer = load_model_and_tokenizer()
+
+# model = DistilBertCRF(MODEL_NAME, num_labels).to(device)
+# # Load to CPU first, then move model to device
+# state_dict = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+# model.load_state_dict(state_dict)
+# #model = model.to(device)   # reassign here
+# model.eval()
 
 # -----------------------------
 # Prediction Function
 # -----------------------------
 def predict_entities(text):
-    # Tokenize while keeping word-piece mapping
     tokens = tokenizer(text, return_tensors="pt", truncation=True, is_split_into_words=False)
-    input_ids = tokens["input_ids"].to(device)
-    attention_mask = tokens["attention_mask"].to(device)
+    input_ids = tokens["input_ids"].to(device).clone().detach()
+    attention_mask = tokens["attention_mask"].to(device).clone().detach()
 
     with torch.no_grad():
-        preds = model(input_ids, attention_mask=attention_mask)  # CRF decode
+        preds = model(input_ids, attention_mask=attention_mask)
 
-    pred_labels = [id2label[i] for i in preds[0]]  # convert ids to tags
-    tokens = tokenizer.convert_ids_to_tokens(input_ids[0])
+    pred_labels = [id2label[i] for i in preds[0]]
+    tokens_list = tokenizer.convert_ids_to_tokens(input_ids[0])
 
-    # Reconstruct words from BPE tokens
     words, labels = [], []
     current_word, current_label = "", None
 
-    for tok, lab in zip(tokens, pred_labels):
+    for tok, lab in zip(tokens_list, pred_labels):
         if tok in ["[CLS]", "[SEP]", "[PAD]"]:
             continue
-
-        # Merge subwords (## prefix means continuation)
         if tok.startswith("##"):
             current_word += tok[2:]
         else:
-            # If we already built a word, save it
             if current_word:
                 words.append(current_word)
                 labels.append(current_label)
             current_word = tok
             current_label = lab
 
-    # Add the last word
     if current_word:
         words.append(current_word)
         labels.append(current_label)
 
-    # Now merge entities based on BIO scheme
-    entities = []
-    current_entity, current_type = "", None
-
+    # Merge entities
+    entities, current_entity, current_type = [], "", None
     for word, label in zip(words, labels):
         if label.startswith("B-"):
-            # save previous entity if exists
             if current_entity:
                 entities.append((current_entity, current_type))
             current_entity = word
@@ -125,10 +128,13 @@ def predict_entities(text):
             if current_entity:
                 entities.append((current_entity, current_type))
                 current_entity, current_type = "", None
-
-    # Save last one
     if current_entity:
         entities.append((current_entity, current_type))
+
+    # Free memory
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     return entities
 
@@ -139,19 +145,15 @@ st.title("Burmese Named Entity Recognition (NER) Demo")
 st.write("Enter a sentence and the model will highlight entities.")
 
 user_input = st.text_area("Enter your sentence:", "ရန်ကုန်မှာ နေထိုင်ပါတယ်။")
+
 if st.button("Predict"):
     if not user_input.strip():
         st.write("Please enter some text.")
     else:
-        # Tokenize the input Burmese text into sentences
-        tokenized_sentences = tokenize_burmese_text(user_input)
-
-        # Run NER model for each sentence
-        for i, sent in enumerate(tokenized_sentences, start=1):
+        sentences = tokenize_burmese_text(user_input)
+        for i, sent in enumerate(sentences, start=1):
             st.markdown(f"**Sentence {i}:** {sent}")
-
             entities = predict_entities(sent)
-
             if not entities:
                 st.write("Predicted Entities: None")
             else:
