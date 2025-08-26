@@ -6,8 +6,7 @@ import torch.nn as nn
 from torch.utils.data import ConcatDataset, DataLoader
 from torch.optim import AdamW
 from transformers import AutoModel, get_linear_schedule_with_warmup
-#from TorchCRF import CRF
-from torchcrf import CRF
+from TorchCRF import CRF
 import time
 from myword_hf import tokenize_burmese_text
 from huggingface_hub import hf_hub_download
