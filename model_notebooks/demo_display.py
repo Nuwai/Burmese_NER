@@ -63,15 +63,10 @@ id2label = {0: 'B-DATE', 1: 'B-LOC', 2: 'B-TIME', 3: 'I-DATE', 4: 'I-LOC', 5: 'I
 num_labels = len(id2label)   # <-- make sure you define id2label = {0:"O", 1:"B-LOC", ...}
 model = DistilBertCRF(MODEL_NAME, num_labels).to(device)
 
-# # Load weights
-# state_dict = torch.load(checkpoint_path, map_location=device, weights_only=True)
-# model.load_state_dict(state_dict)
-# model.eval()
-
 # Load to CPU first, then move model to device
 state_dict = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
 model.load_state_dict(state_dict)
-model = model.to(device)   # reassign here
+#model = model.to(device)   # reassign here
 model.eval()
 
 # -----------------------------
