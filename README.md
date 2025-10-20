@@ -15,13 +15,13 @@ NER identifies and classifies entities in text into categories like PERSON, ORGA
 
 For high-resource languages there are robust tools (e.g., SpaCy, Stanford NER, Flair). For Burmese:
 
-- **Annotated corpora are scarce or non-standardised
+- Annotated corpora are scarce or non-standardised
 
-- **No widely accepted labelling guidelines are in place
+- No widely accepted labelling guidelines are in place
 
-- **Pretrained language resources are limited
+- Pretrained language resources are limited
 
-- **Burmese text presents additional challenges (lack of explicit word boundaries, complex morphology, context-sensitive tokens)
+- Burmese text presents additional challenges (lack of explicit word boundaries, complex morphology, context-sensitive tokens)
 
 Example (Burmese):
 
@@ -32,17 +32,17 @@ Without such a tool, many organisations (law-firms, media agencies, government o
 
 In short: Burmese NER is not just a research challenge, but a linguistic and societal necessity as Myanmar becomes more digitally connected.
 
-Objectives
+**Objectives**
 
 This project aims to:
 
-Build or curate a Burmese NER dataset (annotated sentences) with a consistent label schema.
+- Build or curate a Burmese NER dataset (annotated sentences) with a consistent label schema.
 
-Experiment with different model architectures: from baseline sequence models (e.g., BiLSTM-CRF) to transformer models (e.g., mBERT / XLM-R) with transfer learning.
+- Experiment with different model architectures: from baseline sequence models (e.g., BiLSTM-CRF) to transformer models (e.g., mBERT / XLM-R) with transfer learning.
 
-Evaluate performance using standard metrics (Precision, Recall, F1-score per entity type) and analyse which entity types are most challenging.
+- Evaluate performance using standard metrics (Precision, Recall, F1-score per entity type) and analyse which entity types are most challenging.
 
-Identify key limitations (tokenisation issues, label imbalance, ambiguous entities) and propose improvements for future iterations.
+- Identify key limitations (tokenisation issues, label imbalance, ambiguous entities) and propose improvements for future iterations.
 
 Provide a proof-of-concept research dataset and modelling workflow that can be extended into production-level Burmese NLP tools in the future.
 
