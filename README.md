@@ -112,3 +112,5 @@ Optionally, BIOES (Begin-Inside-Outside-End-Single) may be supported for more gr
 - Release a lightweight Burmese-NER library or API for community use.
 
 Extend from NER → relation extraction → event detection → knowledge graph.
+
+**Project Presentation Slide** : [initial_summary_finding_presentation.pptx](https://github.com/user-attachments/files/23211181/initial_summary_finding_presentation.pptx)
